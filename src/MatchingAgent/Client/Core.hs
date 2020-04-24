@@ -36,11 +36,13 @@ sendProto sock msg = do
 
 recvProto :: Message msg => Socket -> IO msg
 recvProto sock = do
-  [r0, r1, r2, r3] <- fmap (fromIntegral @Word8 @Word32) . BS.unpack <$> recvAtLeast sock 4
-  let responseSize =
+  [r0, r1, r2, r3] <-
+    fmap (fromIntegral @Word8 @Word32) . BS.unpack
+      <$> recvAtLeast sock 4
+  let size =
         fromLittleEndian
         $ r0 .|. (r1 `shiftL` 8) .|. (r2 `shiftL` 16) .|. (r3 `shiftL` 24)
-  responseRaw <- recvAtLeast sock (fromIntegral responseSize)
-  case decodeMessage responseRaw of
+  raw <- recvAtLeast sock (fromIntegral size)
+  case decodeMessage raw of
     Left err -> error $ "decode error: " <> err
     Right msg -> pure msg

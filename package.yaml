@@ -23,17 +23,20 @@ dependencies:
 - microlens
 - network
 - proto-lens
+- text
 
 library:
   source-dirs: src
   ghc-options:
     - -Wall
   dependencies:
+    - process
     - proto-lens-runtime
   exposed-modules:
+    - MatchingAgent.Server
+    - MatchingAgent.Client.Core
     - Proto.MatchingAgent
     - Proto.MatchingAgent_Fields
-    - MatchingAgent.Client.Core
 
 executables:
   demo:
@@ -41,6 +44,7 @@ executables:
     source-dirs: exe
     ghc-options:
       - -Wall
+      - -O2
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
