@@ -1,0 +1,48 @@
+name: matching-agent-client
+version: 0.1.0.0
+github: Javran/matching-agent-client
+license: BSD3
+author: Javran Cheng
+maintainer: javran.c@gmail.com
+copyright: "Copyright: (c) 2020 Javran Cheng"
+
+description: description
+
+custom-setup:
+  dependencies:
+    - base
+    - Cabal
+    - proto-lens-setup
+
+extra-source-files: proto/**/*.proto
+
+dependencies:
+- base
+- bytestring
+- data-endian
+- microlens
+- network
+
+library:
+  source-dirs: src
+  ghc-options:
+    - -Wall
+  dependencies:
+    - proto-lens-runtime
+    - proto-lens
+  exposed-modules:
+    - Proto.MatchingAgent
+    - Proto.MatchingAgent_Fields
+    - MaClientMain
+
+executables:
+  demo:
+    main: Main.hs
+    source-dirs: exe
+    ghc-options:
+      - -Wall
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - matching-agent-client

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+message MatchingResult {
+  int32 rows = 1;
+  int32 cols = 2;
+  repeated float payload = 3;
+}
+
+message FindTagRequest {
+  bytes payload = 1;
+}
+
+message FindTagResponse {
+  string tag = 1;
+  float result = 2;
+}
