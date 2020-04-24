@@ -1,33 +1,17 @@
 {-# LANGUAGE
-    OverloadedStrings
-  , TypeApplications
+    TypeApplications
+  , OverloadedStrings
   #-}
-module MaClientMain
-  ( main
-  ) where
+module MatchingAgent.Client.Core where
 
+import Data.Word
+import Network.Socket.ByteString (recv, sendAll)
+import Network.Socket hiding (recv)
+import Data.ProtoLens
 import Data.Bits
 import Data.Endian
-import Data.ProtoLens
-import Data.Word
-import Lens.Micro
-import Network.Socket hiding (recv)
-import Network.Socket.ByteString (recv, sendAll)
-import System.Environment
 
 import qualified Data.ByteString as BS
-import qualified Proto.MatchingAgent as MA
-import qualified Proto.MatchingAgent_Fields as MA
-
-{-
-  TODO:
-  - an unsafe core module
-  - wrap it around and keep a ma_server running at runtime, and serve as
-    IO action.
-  - assumptions:
-    + server doesn't crash (i.e. ProcessHandle is safe to reuse)
-    + sockets however could be timed out so it's lazily created and used.
- -}
 
 -- keep receiving until get the desired length.
 recvAtLeast :: Socket -> Int -> IO BS.ByteString
@@ -60,19 +44,3 @@ recvProto sock = do
   case decodeMessage responseRaw of
     Left err -> error $ "decode error: " <> err
     Right msg -> pure msg
-
-main :: IO ()
-main = do
-  [fp] <- getArgs
-  raw <- BS.readFile fp
-  let hints = defaultHints { addrSocketType = Stream }
-      req :: MA.FindTagRequest
-      req = defMessage & MA.payload .~ raw
-  addr:_ <- getAddrInfo (Just hints) (Just "127.0.0.1") (Just "17151")
-  sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
-  connect sock $ addrAddress addr
-  sendProto sock req
-  msg <- recvProto @MA.FindTagResponse sock
-  putStrLn . showMessage $ msg
-  close sock
-  pure ()

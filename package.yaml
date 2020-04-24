@@ -22,6 +22,7 @@ dependencies:
 - data-endian
 - microlens
 - network
+- proto-lens
 
 library:
   source-dirs: src
@@ -29,11 +30,10 @@ library:
     - -Wall
   dependencies:
     - proto-lens-runtime
-    - proto-lens
   exposed-modules:
     - Proto.MatchingAgent
     - Proto.MatchingAgent_Fields
-    - MaClientMain
+    - MatchingAgent.Client.Core
 
 executables:
   demo:
