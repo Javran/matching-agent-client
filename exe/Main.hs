@@ -1,9 +1,9 @@
 {-# LANGUAGE
     OverloadedStrings
-  , TypeApplications
   #-}
 module Main (main) where
 
+import Control.Monad
 import MatchingAgent.Server
 import System.Environment
 
@@ -15,8 +15,11 @@ main = do
   port <- read <$> getEnv "MA_SERVER_PORT"
   patternBase <- getEnv "MA_SERVER_PATTERN_BASE"
   let serverConfig = ServerConfig binPath port patternBase
-  [fp] <- getArgs
-  raw <- BS.readFile fp
-  withServer serverConfig $ \server -> do
-    result <- findTag server raw
-    print result
+  paths <- getArgs
+  -- raw <- BS.readFile fp
+  withServer serverConfig $ \server ->
+    forM_ paths $ \fp -> do
+      raw <- BS.readFile fp
+      putStrLn $ "F: " <> fp
+      result <- findTag server raw
+      putStrLn $ "  -> " <> show result
