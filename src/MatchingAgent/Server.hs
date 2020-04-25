@@ -25,7 +25,7 @@ import MatchingAgent.Client.Core
 
 data ServerConfig
   = ServerConfig
-    { scServerBinPath :: FilePath
+    { scBinPath :: FilePath
     , scPort :: Int
     , scPatternBase :: FilePath
     }
@@ -40,10 +40,10 @@ data ServerState
 newtype ServerHandle = ServerHandle (MVar ServerState)
 
 startServer :: ServerConfig -> IO ServerState
-startServer ServerConfig{scServerBinPath, scPort, scPatternBase} = do
+startServer ServerConfig{scBinPath, scPort, scPatternBase} = do
   let crProc =
         (proc
-          scServerBinPath
+          scBinPath
           [ "--port", show scPort
           , "--pattern_base", scPatternBase
           ]) { std_in = NoStream
