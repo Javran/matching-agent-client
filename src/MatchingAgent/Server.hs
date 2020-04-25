@@ -9,13 +9,12 @@ module MatchingAgent.Server
   , ServerHandle
   ) where
 
+import Control.Concurrent
+import Control.Exception
 import Data.ProtoLens
 import Lens.Micro
 import Network.Socket
 import System.Process
-import Control.Exception
-import Control.Concurrent
-import Control.Concurrent.MVar
 
 import qualified Data.ByteString as BS
 import qualified Proto.MatchingAgent as MA
