@@ -14,6 +14,7 @@ import Lens.Micro
 import Network.Socket
 import System.Process
 import Control.Exception
+import Control.Concurrent
 import Control.Concurrent.MVar
 
 import qualified Data.ByteString as BS
@@ -41,12 +42,13 @@ newtype ServerHandle = ServerHandle (MVar ServerState)
 
 startServer :: ServerConfig -> IO ServerState
 startServer ServerConfig{scBinPath, scPort, scPatternBase} = do
+  -- TODO: should warn if the binary isn't executed successfully.
   let crProc =
         (proc
           scBinPath
           [ "--port", show scPort
           , "--pattern_base", scPatternBase
-          ]) { std_in = NoStream
+          ]) { std_in = CreatePipe
              , std_out = CreatePipe
              , std_err = CreatePipe
              }
@@ -64,6 +66,8 @@ ensureSock ss@ServerState{ssSock = m, ssPort} =
       let hints = defaultHints { addrSocketType = Stream }
       addr:_ <- getAddrInfo (Just hints) (Just "127.0.0.1") (Just $ show ssPort)
       sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
+      -- TODO: retry properly.
+      threadDelay $ 1000 * 200
       connect sock $ addrAddress addr
       pure $ ss {ssSock = Just sock}
     Just _ -> pure ss

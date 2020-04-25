@@ -14,19 +14,16 @@ import qualified Proto.MatchingAgent as MA
 import qualified Proto.MatchingAgent_Fields as MA
 
 import MatchingAgent.Client.Core
+import MatchingAgent.Server
 
 main :: IO ()
 main = do
+  binPath <- getEnv "MA_SERVER_BIN_PATH"
+  port <- read <$> getEnv "MA_SERVER_PORT"
+  patternBase <- getEnv "MA_SERVER_PATTERN_BASE"
+  let serverConfig = ServerConfig binPath port patternBase
   [fp] <- getArgs
   raw <- BS.readFile fp
-  let hints = defaultHints { addrSocketType = Stream }
-      req :: MA.FindTagRequest
-      req = defMessage & MA.payload .~ raw
-  addr:_ <- getAddrInfo (Just hints) (Just "127.0.0.1") (Just "17151")
-  sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
-  connect sock $ addrAddress addr
-  sendProto sock req
-  msg <- recvProto @MA.FindTagResponse sock
-  putStrLn . showMessage $ msg
-  close sock
-  pure ()
+  withServer serverConfig $ \server -> do
+    result <- findTag server raw
+    print result
