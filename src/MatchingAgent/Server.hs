@@ -1,7 +1,7 @@
 {-# LANGUAGE
-    NamedFieldPuns
+    LambdaCase
+  , NamedFieldPuns
   , TypeApplications
-  , LambdaCase
   #-}
 module MatchingAgent.Server
   ( ServerConfig(..)
@@ -14,6 +14,7 @@ import Control.Concurrent
 import Control.Exception.Safe
 import Data.Function
 import Data.ProtoLens
+import Data.Tuple
 import Lens.Micro
 import Network.Socket
 import System.Process
@@ -111,6 +112,5 @@ withServer sc = bracket svOpen svClose
       terminateProcess ph
 
 findTag :: ServerHandle -> BS.ByteString -> IO (T.Text, Float)
-findTag (ServerHandle sh) raw = modifyMVar sh $ \ssPre -> do
-  (r, ss) <- findTagAux ssPre raw
-  pure (ss, r)
+findTag (ServerHandle sh) raw =
+  modifyMVar sh $ \ssPre -> swap <$> findTagAux ssPre raw
