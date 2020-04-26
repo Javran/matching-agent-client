@@ -66,19 +66,24 @@ ensureSock ss@ServerState{ssHandle = ph, ssSock = m, ssPort} =
       let hints = defaultHints { addrSocketType = Stream }
       addr:_ <- getAddrInfo (Just hints) (Just "127.0.0.1") (Just $ show ssPort)
       sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
-      fix $ \retry -> do
-        result <- tryIO $ do
-          threadDelay $ 20 * 1000
-          connect sock $ addrAddress addr
-        case result of
-          Left _ ->
-            -- connection failure could be a result of binary
-            -- exiting unexpectedly, in which case we should not retry again.
-            getProcessExitCode ph >>= \case
-              Nothing -> retry
-              Just ec ->
-                error $ "Unexpected exiting, code=" <> show ec
-          Right _ -> pure ()
+      fix (\retry count ->
+        if count > 20
+          then
+            error "Failed to establish connection, no more retries."
+          else do
+            result <- tryIO $ do
+              threadDelay $ 20 * 1000
+              connect sock $ addrAddress addr
+            case result of
+              Left _ ->
+                -- connection failure could be a result of binary
+                -- exiting unexpectedly, in which case we should not retry again.
+                getProcessExitCode ph >>= \case
+                  Nothing -> retry (succ count)
+                  Just ec ->
+                    error $ "Unexpected exiting, code=" <> show ec
+              Right _ -> pure ()
+          ) (0 :: Int)
       pure $ ss {ssSock = Just sock}
     Just _ -> pure ss
 
