@@ -23,6 +23,7 @@ dependencies:
 - microlens
 - network
 - proto-lens
+- safe-exceptions
 - text
 
 library:

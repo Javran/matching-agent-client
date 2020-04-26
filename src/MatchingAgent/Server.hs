@@ -1,6 +1,7 @@
 {-# LANGUAGE
     NamedFieldPuns
   , TypeApplications
+  , LambdaCase
   #-}
 module MatchingAgent.Server
   ( ServerConfig(..)
@@ -10,7 +11,8 @@ module MatchingAgent.Server
   ) where
 
 import Control.Concurrent
-import Control.Exception
+import Control.Exception.Safe
+import Data.Function
 import Data.ProtoLens
 import Lens.Micro
 import Network.Socket
@@ -41,7 +43,6 @@ newtype ServerHandle = ServerHandle (MVar ServerState)
 
 startServer :: ServerConfig -> IO ServerState
 startServer ServerConfig{scBinPath, scPort, scPatternBase} = do
-  -- TODO: should warn if the binary isn't executed successfully.
   let crProc =
         (proc
           scBinPath
@@ -59,15 +60,25 @@ startServer ServerConfig{scBinPath, scPort, scPatternBase} = do
     }
 
 ensureSock :: ServerState -> IO ServerState
-ensureSock ss@ServerState{ssSock = m, ssPort} =
+ensureSock ss@ServerState{ssHandle = ph, ssSock = m, ssPort} =
   case m of
     Nothing -> do
       let hints = defaultHints { addrSocketType = Stream }
       addr:_ <- getAddrInfo (Just hints) (Just "127.0.0.1") (Just $ show ssPort)
       sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
-      -- TODO: retry properly.
-      threadDelay $ 1000 * 200
-      connect sock $ addrAddress addr
+      fix $ \retry -> do
+        result <- tryIO $ do
+          threadDelay $ 20 * 1000
+          connect sock $ addrAddress addr
+        case result of
+          Left _ ->
+            -- connection failure could be a result of binary
+            -- exiting unexpectedly, in which case we should not retry again.
+            getProcessExitCode ph >>= \case
+              Nothing -> retry
+              Just ec ->
+                error $ "Unexpected exiting, code=" <> show ec
+          Right _ -> pure ()
       pure $ ss {ssSock = Just sock}
     Just _ -> pure ss
 
